@@ -23,7 +23,7 @@
         SOFT_TAB_LENGTH = SOFT_TAB.length,
         ONLY_WHITESPACE_REGEX = /^\s*$/,
         WHITESPACE_SPLIT_REGEX = /\s+$/g,
-        VERSION = '1.2';
+        VERSION = '1.3';
 
     /* Throttle the given function, condensing multiple calls into one call after
      * the given timeout period. In other words, allow at most one call to go
@@ -57,7 +57,6 @@
         for (var i = 0, len = styles.length; i < len; i++) {
             if (styles[i] != "") {
                 style = styles[i].split(":");
-                console.log(control.tagName);
                 if (remove) {
                     control.style.removeProperty(style[0]);
                 } else {
@@ -80,8 +79,10 @@
         return this.replace(/(^\s+|\s+$)/g, '');
     };
 
+    /* Main starting function */
     function init() {
         // before we do anything - check if there is a stylist panel already..
+        // open it if available.
         if (document.getElementById('stylist\:panel')) {
             togglePanel(true);
             return;
@@ -97,6 +98,8 @@
             toggleBox = document.createElement("label"),
             download = document.createElement("a"),
             versionDiv = document.createElement("version"),
+            closeButton = document.createElement("button"),
+            posButton = document.createElement("button"),
             filename,
             next_position = "B",
             isChrome = !!window.chrome;
@@ -105,22 +108,22 @@
             switch (next_position) {
                 case "B":
                     applyImportantStyles(panel, "top:0;right:0;height:100%;width:300px", true);
-                    applyImportantStyles(panel, "bottom:;left:;height:;width:", false);
+                    applyImportantStyles(panel, "bottom:0;left:0;height:300px;width:98%", false);
                     next_position = "L";
                     break;
                 case "L":
-                    applyImportantStyles(panel, "bottom:0;left:0;height:300px;width:100%", true);
-                    applyImportantStyles(panel, "top:;left:;height:;width:", false);
+                    applyImportantStyles(panel, "bottom:0;left:0;height:300px;width:98%", true);
+                    applyImportantStyles(panel, "top:0;left:0;height:100%;width:300px", false);
                     next_position = "T";
                     break;
                 case "T":
                     applyImportantStyles(panel, "top:0;left:0;height:100%;width:300px", true);
-                    applyImportantStyles(panel, "top:;left:;height:;width:", false);
+                    applyImportantStyles(panel, "top:0;left:0;height:300px;width:98%", false);
                     next_position = "R";
                     break;
                 case "R":
-                    applyImportantStyles(panel, "top:0;left:0;height:300px;width:100%", true);
-                    applyImportantStyles(panel, "top:;right:;width:;height:", false);
+                    applyImportantStyles(panel, "top:0;left:0;height:300px;width:98%", true);
+                    applyImportantStyles(panel, "top:0;right:0;height:100%;width:300px", false);
                     next_position = "B";
                     break;
                 default:
@@ -149,13 +152,20 @@
         applyImportantStyles(panel, "position:fixed;top:0;right:0;width:300px;height:100%;z-index:2147483647;overflow:auto;outline:solid 1px #333;padding:0 20px;borderTop:0;borderBottom:0;borderRight:0;borderLeft:1px solid #ccc;color:#222;background:#fcfcfc");
         applyImportantStyles(textarea, "font:13px Inconsolata, Consolas, Menlo, Monaco, Lucida Console, Courier New, Courier, monospace;width:100%;height:calc(100% - 140px);direction:ltr;textAlign:left;background:#fcfcfc");
         applyImportantStyles(download, "display:none");
-        applyImportantStyles(versionDiv, "font:9px monospace;color:#aaa;position:absolute;top:10px;right:10px");
+        applyImportantStyles(versionDiv, "font:9px monospace;color:#aaa;position:absolute;top:10px;right:20px");
         versionDiv.innerHTML = "v" + VERSION;
-
+        
+        // closeButton styling.
+        closeButton.id = "stylist:close";
+        closeButton.setAttribute("title", "Close this panel");
+        closeButton.appendChild(document.createTextNode("&times;"));
+        applyImportantStyles(closeButton, "position:absolute;top:10px;right:10px;cursor:pointer;width:20px;height:20px;font-size:8pt;text-align:center;vertical-align:middle;padding:0");
+        
         // Add some basic instructions..
         h1.innerHTML = "Stylist";
         applyImportantStyles(h1, "color:#555;background-color:#fcfcfc;width:150px;height:1.5em;margin:4px 0 4px 0;font-family:serif;font-size:20px;font-style:oblique;line-height:1.5em;box-shadow:none;text-shadow:none;text-align:left");
         applyImportantStyles(ul, "font:12px monospace;list-style:none;margin-left:-40px;margin-top:0px");
+        
         addItem(ul, "CTRL+M: toggle this panel");
         addItem(ul, "CTRL+Y: change dock position");
         addItem(ul, "ALT+click: target element");
@@ -165,6 +175,7 @@
         panel.appendChild(toggleBox);
         panel.appendChild(textarea);
         panel.appendChild(versionDiv);
+        panel.appendChild(closeButton);
         head.appendChild(style); //head
         body.appendChild(panel);
 
@@ -259,6 +270,12 @@
         checkbox.addEventListener("click", function (e) {
             updateAndSaveStyles();
         });
+        
+        // closebutton event listener
+        closeButton.addEventListener("click", function(e) {
+           // close the panel - since the button is visible!
+           togglePanel(false); 
+        });
 
         // continually update styles with textarea content
         textarea.addEventListener("keyup", updateAndSaveStyles);
@@ -283,6 +300,7 @@
             }
         });
 
+        /* Save the CSS to file and download to browser - only for Chrome */
         function saveCSSToFile() {
             var data = new Blob([textarea.value], { type: "text/plain;charset=UTF-8" });
             filename = window.URL.createObjectURL(data, { oneTimeOnly: true });
@@ -293,6 +311,7 @@
             window.URL.revokeObjectURL(filename);
         }
 
+        /* Generate timestamp for the CSS file */
         function getTimestamp() {
             var d1 = new Date(),
                 curr_year = d1.getFullYear(),
@@ -324,6 +343,7 @@
             return timestamp;
         }
 
+        /* Toggles the panel in or out of view */
         function togglePanel(open) {
             var stylistPanel = panel || document.getElementById("stylist\:panel");
             if (stylistPanel) {
@@ -331,8 +351,10 @@
             }
         }
 
+        /* Keydown event handler */
         window.addEventListener("keydown", function (event) {
             if (event.ctrlKey) {
+                console.log(event.keyCode);
                 switch (event.keyCode) {
                     case M_KEY_CODE: {
                         // control + m toggles text area
