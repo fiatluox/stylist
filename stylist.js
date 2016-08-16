@@ -23,7 +23,7 @@
         SOFT_TAB_LENGTH = SOFT_TAB.length,
         ONLY_WHITESPACE_REGEX = /^\s*$/,
         WHITESPACE_SPLIT_REGEX = /\s+$/g,
-        VERSION = '1.3';
+        VERSION = '1.5';
 
     /* Throttle the given function, condensing multiple calls into one call after
      * the given timeout period. In other words, allow at most one call to go
@@ -136,13 +136,13 @@
         panel.style.display = "block";
         textarea.spellcheck = false;
 
-        textarea.id = "stylist:input";
-        panel.id = "stylist:panel";
+        textarea.id = "__input";
+        panel.id = "__panel";
 
         // create checkbox to toggle the application of the style.
         var checkbox = document.createElement("input");
         checkbox.setAttribute("type", "checkbox");
-        checkbox.setAttribute("checked", "checked");
+        //checkbox.setAttribute("checked", "checked");
         toggleBox.appendChild(checkbox);
         toggleBox.appendChild(document.createTextNode("Apply CSS"));
         applyImportantStyles(toggleBox, "font:12px monospace;vertical-align:middle;text-align:left");
@@ -156,15 +156,15 @@
         versionDiv.innerHTML = "v" + VERSION;
         
         // closeButton styling.
-        closeButton.id = "stylist:close";
+        closeButton.id = "__close";
         closeButton.setAttribute("title", "Close this panel");
-        closeButton.appendChild(document.createTextNode("&times;"));
-        applyImportantStyles(closeButton, "position:absolute;top:10px;right:10px;cursor:pointer;width:20px;height:20px;font-size:8pt;text-align:center;vertical-align:middle;padding:0");
+        closeButton.appendChild(document.createTextNode("X"));
+        applyImportantStyles(closeButton, "position:absolute;top:10px;right:10px;cursor:pointer;transform:scale(0.8)");
         
         // Add some basic instructions..
         h1.innerHTML = "Stylist";
         applyImportantStyles(h1, "color:#555;background-color:#fcfcfc;width:150px;height:1.5em;margin:4px 0 4px 0;font-family:serif;font-size:20px;font-style:oblique;line-height:1.5em;box-shadow:none;text-shadow:none;text-align:left");
-        applyImportantStyles(ul, "font:12px monospace;list-style:none;margin-left:-40px;margin-top:0px");
+        applyImportantStyles(ul, "font:12px monospace;list-style:none;margin-top:0px");
         
         addItem(ul, "CTRL+M: toggle this panel");
         addItem(ul, "CTRL+Y: change dock position");
@@ -184,9 +184,11 @@
             panel.appendChild(download);
         }
 
-        style.innerHTML = localStorage.siteStyle || "";
-        textarea.value = style.innerHTML;
+        // check if the styles are applied - localStorage stores bools as strings.
+        checkbox.checked = (localStorage.applyStyles || 'true') === 'true';
+        textarea.value = localStorage.siteStyle || "";
         textarea.placeholder = "/* Enter your styles here. */";
+        style.innerHTML = checkbox.checked ? textarea.value : "";
 
         // alt + click on an element adds its selector to the textarea
         body.addEventListener("click", function (event) {
@@ -258,6 +260,8 @@
         /* Save styles persistently in local storage. */
         var saveStyles = throttle(function () {
             localStorage.siteStyle = textarea.value;
+            localStorage.applyStyles = checkbox.checked ? "true" : "false";
+            console.log("applyStyles :" + localStorage.applyStyles);
         }, 500);
 
         /* Updates styles with content in textarea and saves styles. */
@@ -345,7 +349,7 @@
 
         /* Toggles the panel in or out of view */
         function togglePanel(open) {
-            var stylistPanel = panel || document.getElementById("stylist\:panel");
+            var stylistPanel = panel || document.getElementById("__panel");
             if (stylistPanel) {
                 stylistPanel.style.display = (open) ? "block" : "none";
             }
